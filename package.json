@@ -1,0 +1,27 @@
+{
+  "name": "agentic-workflow-playground",
+  "version": "1.0.0",
+  "description": "A demo repository to showcase GitHub Copilot Agentic Workflow capabilities",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "github-copilot",
+    "agentic-workflow",
+    "copilot-cloud-agent",
+    "demo"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  }
+}

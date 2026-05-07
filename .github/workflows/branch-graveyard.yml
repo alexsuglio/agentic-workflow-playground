@@ -1,6 +1,7 @@
 # Triggered whenever a branch is deleted in this repository.
 # Appends a row to graveyard/index.html recording the UTC timestamp,
-# branch name, and the actor who deleted it.
+# branch name, actor, and a template-based natural-language summary
+# derived from the branch name prefix.
 
 name: Branch Graveyard
 
@@ -36,8 +37,36 @@ jobs:
           actor  = html.escape(os.environ["DELETED_BY"])
           ts     = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
+          def generate_branch_summary(branch_name: str) -> str:
+              """Return a template-based natural-language summary for a deleted branch.
+
+              Classifies the branch by its prefix (case-insensitive) and maps it to a
+              human-readable sentence.  Supported prefixes:
+                  feature/, feat/   - feature branches
+                  fix/, bugfix/     - bug-fix branches
+                  hotfix/           - hotfix branches
+                  release/          - release branches
+                  experiment/, wip/ - experimental/work-in-progress branches
+                  <anything else>   - fallback description
+              """
+              branch_name_lower = branch_name.lower()
+              if branch_name_lower.startswith(("feature/", "feat/")):
+                  return "This branch appears to be a feature branch that was deleted as part of routine cleanup."
+              elif branch_name_lower.startswith(("fix/", "bugfix/")):
+                  return "This branch appears to be a bug-fix branch that was removed after its work was completed or abandoned."
+              elif branch_name_lower.startswith("hotfix/"):
+                  return "This branch resembles a hotfix branch and may represent urgent work that was cleaned up after use."
+              elif branch_name_lower.startswith("release/"):
+                  return "This branch appears to be release-related and may warrant extra attention in historical records."
+              elif branch_name_lower.startswith(("experiment/", "wip/")):
+                  return "This looks like an experimental branch that was deleted after exploratory work."
+              else:
+                  return "This branch was deleted and has been recorded in the graveyard for reference."
+
+          summary = html.escape(generate_branch_summary(os.environ["BRANCH_NAME"]))
+
           indent  = '      '
-          new_row = f'{indent}<tr><td>{ts} UTC</td><td>{branch}</td><td>{actor}</td></tr>\n'
+          new_row = f'{indent}<tr><td>{ts} UTC</td><td>{branch}</td><td>{actor}</td><td>{summary}</td></tr>\n'
           marker  = f'{indent}<!-- entries prepended here by the branch-graveyard workflow -->\n'
 
           path = "graveyard/index.html"

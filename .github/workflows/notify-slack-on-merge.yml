@@ -28,7 +28,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check Slack secrets
+        id: check_secrets
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_USER_ID: ${{ secrets.SLACK_USER_ID }}
+        run: |
+          if [ -z "$SLACK_BOT_TOKEN" ] || [ -z "$SLACK_USER_ID" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SLACK_BOT_TOKEN or SLACK_USER_ID is not configured. Skipping Slack notification."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Send DM via Slack
+        if: steps.check_secrets.outputs.configured == 'true'
         uses: slackapi/slack-github-action@v2.0.0
         with:
           method: chat.postMessage

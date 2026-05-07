@@ -1,4 +1,4 @@
-const { add, subtract, multiply, divide, factorial, percentage } = require("../src/calculator");
+const { add, subtract, multiply, divide, factorial, percentage, calculateTip } = require("../src/calculator");
 
 describe("calculator", () => {
   describe("add", () => {
@@ -87,6 +87,40 @@ describe("calculator", () => {
 
     it("should throw TypeError when given non-number input", () => {
       expect(() => percentage(25, "100")).toThrow(TypeError);
+    });
+  });
+
+  describe("calculateTip", () => {
+    it("should return correct tip and total for a standard tip", () => {
+      expect(calculateTip(100, 18)).toEqual({ tip: 18, total: 118 });
+    });
+
+    it("should return correct tip and total for a zero tip", () => {
+      expect(calculateTip(50, 0)).toEqual({ tip: 0, total: 50 });
+    });
+
+    it("should return correct tip and total for a 100% tip", () => {
+      expect(calculateTip(50, 100)).toEqual({ tip: 50, total: 100 });
+    });
+
+    it("should throw an error when bill amount is negative", () => {
+      expect(() => calculateTip(-10, 18)).toThrow("Bill amount must be non-negative");
+    });
+
+    it("should throw an error when tip percentage is greater than 100", () => {
+      expect(() => calculateTip(100, 101)).toThrow("Tip percentage must be between 0 and 100");
+    });
+
+    it("should throw an error when tip percentage is negative", () => {
+      expect(() => calculateTip(100, -5)).toThrow("Tip percentage must be between 0 and 100");
+    });
+
+    it("should throw TypeError when billAmount is not a number", () => {
+      expect(() => calculateTip("100", 18)).toThrow(TypeError);
+    });
+
+    it("should throw TypeError when tipPercentage is not a number", () => {
+      expect(() => calculateTip(100, null)).toThrow(TypeError);
     });
   });
 });

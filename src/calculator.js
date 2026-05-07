@@ -113,4 +113,26 @@ const percentage = (part, total) => {
   return (part / total) * 100;
 };
 
-module.exports = { add, subtract, multiply, divide, factorial, percentage };
+/**
+ * Calculates the tip amount and total bill.
+ * @param {number} billAmount - The pre-tip bill amount (must be non-negative)
+ * @param {number} tipPercentage - The tip percentage to apply (must be between 0 and 100)
+ * @returns {{ tip: number, total: number }} Object containing the tip amount and total bill
+ * @throws {TypeError} If either argument is not a finite number
+ * @throws {Error} If billAmount is negative or tipPercentage is not between 0 and 100
+ * @example
+ * calculateTip(100, 18); // { tip: 18, total: 118 }
+ */
+const calculateTip = (billAmount, tipPercentage) => {
+  validateNumbers(billAmount, tipPercentage);
+  if (billAmount < 0) {
+    throw new Error("Bill amount must be non-negative");
+  }
+  if (tipPercentage < 0 || tipPercentage > 100) {
+    throw new Error("Tip percentage must be between 0 and 100");
+  }
+  const tip = (billAmount * tipPercentage) / 100;
+  return { tip, total: billAmount + tip };
+};
+
+module.exports = { add, subtract, multiply, divide, factorial, percentage, calculateTip };

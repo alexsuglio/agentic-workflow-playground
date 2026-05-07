@@ -1,0 +1,75 @@
+# Triggered whenever a branch is deleted in this repository.
+# Appends a row to graveyard/index.html recording the UTC timestamp,
+# branch name, and the actor who deleted it.
+
+name: Branch Graveyard
+
+on:
+  delete:
+
+jobs:
+  record:
+    name: Record deleted branch
+    # Only run when a branch (not a tag) is deleted
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use the default branch so we always write to main
+          ref: main
+
+      - name: Append entry to graveyard/index.html
+        env:
+          BRANCH_NAME: ${{ github.event.ref }}
+          DELETED_BY: ${{ github.actor }}
+        run: |
+          python3 - <<'PYEOF'
+          import os, html, datetime, sys
+
+          branch = html.escape(os.environ["BRANCH_NAME"])
+          actor  = html.escape(os.environ["DELETED_BY"])
+          ts     = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+          indent  = '      '
+          new_row = f'{indent}<tr><td>{ts} UTC</td><td>{branch}</td><td>{actor}</td></tr>\n'
+          marker  = f'{indent}<!-- entries prepended here by the branch-graveyard workflow -->\n'
+
+          path = "graveyard/index.html"
+          if not os.path.exists(path):
+              print(f"ERROR: {path} not found — cannot record deletion.", file=sys.stderr)
+              sys.exit(1)
+
+          with open(path) as f:
+              content = f.read()
+
+          if marker not in content:
+              print(f"ERROR: marker comment not found in {path} — cannot record deletion.", file=sys.stderr)
+              sys.exit(1)
+
+          updated = content.replace(marker, new_row + marker, 1)
+
+          with open(path, "w") as f:
+              f.write(updated)
+
+          print(f"Recorded: {branch} deleted by {actor} at {ts} UTC")
+          PYEOF
+
+      - name: Commit and push graveyard update
+        env:
+          BRANCH_REF: ${{ github.event.ref }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add graveyard/index.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "graveyard: record deletion of branch '${BRANCH_REF}'"
+            git push
+          fi
